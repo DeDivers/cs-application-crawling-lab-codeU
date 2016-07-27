@@ -1,6 +1,7 @@
 package com.flatironschool.javacs;
 
 import java.io.IOException;
+import java.io.Console;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -54,8 +55,22 @@ public class WikiCrawler {
 	 * @throws IOException
 	 */
 	public String crawl(boolean testing) throws IOException {
-        // FILL THIS IN!
-		return null;
+		if (queue.isEmpty()) {
+			return null;
+		}
+		String s = queue.poll();
+		Elements e;
+        if (testing) {
+        	e = wf.readWikipedia(s);
+        } else {
+        	if (index.isIndexed(s)) {
+        		return null;
+        	}
+        	e = wf.fetchWikipedia(s);
+        }
+        index.indexPage(s, e);
+        queueInternalLinks(e);
+		return s;
 	}
 	
 	/**
@@ -65,7 +80,15 @@ public class WikiCrawler {
 	 */
 	// NOTE: absence of access level modifier means package-level
 	void queueInternalLinks(Elements paragraphs) {
-        // FILL THIS IN!
+    	for (Element para: paragraphs) {
+    		for (Element e: para.select("a[href]")) {
+    			String str = e.attr("href");
+    			if (str.startsWith("/wiki/")) {
+    				String s = e.attr("abs:href");
+    				queue.offer(s);
+    			}
+    		}
+    	}
 	}
 
 	public static void main(String[] args) throws IOException {
@@ -86,7 +109,7 @@ public class WikiCrawler {
 			res = wc.crawl(false);
 
             // REMOVE THIS BREAK STATEMENT WHEN crawl() IS WORKING
-            break;
+            // break;
 		} while (res == null);
 		
 		Map<String, Integer> map = index.getCounts("the");
